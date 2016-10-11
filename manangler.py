@@ -3,9 +3,13 @@ from collections import defaultdict as dd
 from os.path import isfile as oldme
 from functools import partial
 import requests
+import tweepy
 import ujson
+import sys
 from bs4 import BeautifulSoup
 import pickle
+from env import CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_SECRET
+
 
 
 # Storage
@@ -193,9 +197,25 @@ if __name__ == '__main__':
     mangled_pos = mangle(pos, transforms)
     mangled_def = ' '.join(mangle(part, transforms) for part in definition.split())
 
-    print(mangled + ': ' + mangled_pos + '.', mangled_def)
+    # Nice
+    tweet = mangled + ': ' + mangled_pos + '.', mangled_def
+    sys.stdout.write(word, tweet)
+
+    # *********************************************************************** #
+    # Auth...
+
+    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
+    api = tweepy.API(auth)
+
+    sys.stdout.write('Tweeting...')
+    stat = api.update_status(tweet[:140])
+
+
+    # *********************************************************************** #
+    # Sleep...
 
     with open(ME, 'wb') as newme:
             pickle.dump((fourgrams, fivegrams, sixgrams, done + [word]), newme)
-
+    # bye!
     
