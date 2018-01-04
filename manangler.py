@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 from numpy.random import choice, randint
 from collections import defaultdict as dd
 from os.path import isfile as oldme
@@ -198,8 +199,8 @@ if __name__ == '__main__':
     mangled_def = ' '.join(mangle(part, transforms) for part in definition.split())
 
     # Nice
-    tweet = mangled + ': ' + mangled_pos + '.', mangled_def
-    sys.stdout.write(word, tweet)
+    tweet = mangled + ': ' + mangled_pos + '. ' + mangled_def
+    sys.stdout.write(word + ' ' + tweet + '\n')
 
     # *********************************************************************** #
     # Auth...
@@ -208,9 +209,7 @@ if __name__ == '__main__':
     auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
     api = tweepy.API(auth)
 
-    sys.stdout.write('Tweeting...')
-    stat = api.update_status(tweet[:140])
-
+    stat = api.update_status(tweet)
 
     # *********************************************************************** #
     # Sleep...
