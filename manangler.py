@@ -136,7 +136,7 @@ def mangle(word, transforms):
     while i < len(word) - 5:
         fiver = word[i:i + 5]
         word = word.replace(fiver, choice(transforms)(fiver), 1)
-        i += 1
+        i += choice([1, 2])
     return word
 
 
@@ -156,13 +156,13 @@ def define(word):
                           .li
                           .text)
         pos = (soup.html
-                  .body
-                  .find(id='content')
-                  .find(id='bodyContent')
-                  .find(id='mw-content-text')
-                  .ol
-                  .find_previous_sibling('h3')
-                  .text)
+                   .body
+                   .find(id='content')
+                   .find(id='bodyContent')
+                   .find(id='mw-content-text')
+                   .ol
+                   .find_previous_sibling('h3')
+                   .text)
     except AttributeError:
         return None, None
     return pos.strip(), ' '.join(definition.split())
