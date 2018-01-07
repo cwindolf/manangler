@@ -58,12 +58,13 @@ def init():
 
 
 # *************************************************************************** #
-# Profit
+# Mangle
 
 def good_word(word):
     r = requests.get(EXISTENCE_API % word)
     json = ujson.loads(r.text)
     return '-1' not in json['query']['pages']
+
 
 def random_word(done):
     with open(LONGWORDS, 'r') as longwords:
@@ -144,7 +145,7 @@ def mangle(word, transforms):
 
 
 # *************************************************************************** #
-# Grab and mangle definitions from Wiktionary
+# Wiktionary parsing
 
 def define(word):
     r = requests.get(DEFN_API % word)
@@ -218,5 +219,6 @@ if __name__ == '__main__':
 
     with open(ME, 'wb') as newme:
             pickle.dump((fourgrams, fivegrams, sixgrams, done + [word]), newme)
+
     # bye!
     
