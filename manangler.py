@@ -129,8 +129,11 @@ def remove(fivegram, fourgrams):
     return fivegram
 
 
+# I think its kind of funnier if these are intelligible.
+IGNORE_THEM = {'present', 'past', 'future', 'participal', 'plural', 'singular'}
+
 def mangle(word, transforms):
-    if len(word) < 5:
+    if len(word) < 5 or word.lower() in IGNORE_THEM:
         return word
     i = 0
     while i < len(word) - 5:
@@ -195,11 +198,10 @@ if __name__ == '__main__':
     word = random_word(done)
     pos, definition = define(word)
     mangled = mangle(word, transforms)
-    mangled_pos = mangle(pos, transforms)
     mangled_def = ' '.join(mangle(part, transforms) for part in definition.split())
 
     # Nice
-    tweet = mangled + ': ' + mangled_pos + '. ' + mangled_def
+    tweet = mangled + ': ' + pos + '. ' + mangled_def
     sys.stdout.write(word + ' ' + tweet + '\n')
 
     # *********************************************************************** #
