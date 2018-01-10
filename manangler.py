@@ -23,17 +23,6 @@ DEFN_API = 'http://en.wiktionary.org/w/index.php?title=%s&printable=yes'
 
 
 # *************************************************************************** #
-# Save and Load program state between runs
-
-def save():
-    pass
-
-
-def load():
-    pass
-
-
-# *************************************************************************** #
 # Do the work
 
 def zero():
@@ -82,11 +71,7 @@ def random_word(dictionary):
 
 
 def sum_sxor(a_string, b_string):
-    acc = 0
-    for a, b in zip(a_string, b_string):
-        if a == b:
-            acc += 1
-    return acc
+    return sum(a == b for a, b in zip(a_string, b_string))
 
 
 def replace(fivegram, fivegrams):
@@ -98,7 +83,6 @@ def replace(fivegram, fivegrams):
             possibles.append(replacement)
     possibles.sort(key=lambda x: fivegrams[x])
     if possibles:
-        # print(fivegram, '-->', possibles[0])
         return possibles[0]
     return fivegram
 
@@ -137,7 +121,7 @@ def remove(fivegram, fourgrams):
 
 
 # I think its kind of funnier if these are intelligible.
-IGNORE_THEM = {'present', 'past', 'future', 'participal', 'plural', 'singular'}
+IGNORE_THEM = {'present', 'past', 'future', 'participle', 'plural', 'singular'}
 
 def mangle(word, transforms, dictionary):
     # Little words are too little
@@ -181,8 +165,9 @@ def define(word):
                    .ol
                    .find_previous_sibling('h3')
                    .text)
-    except AttributeError:
-        return None, None
+    except AttributeError as e:
+        sys.stdout.write('Failed to soup wiktionary on', word, e)
+        raise
     return pos.strip(), ' '.join(definition.split())
 
 
