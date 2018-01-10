@@ -3,6 +3,7 @@ from numpy.random import choice, randint
 from collections import defaultdict as dd
 from os.path import isfile as oldme
 from functools import partial
+from random import shuffle
 import requests
 import tweepy
 import ujson
@@ -10,8 +11,6 @@ import sys
 from bs4 import BeautifulSoup
 import pickle
 from env import CONSUMER_KEY, CONSUMER_SECRET, ACCESS_TOKEN, ACCESS_SECRET
-
-
 
 # Storage
 ME = 'state.pickle'
@@ -66,13 +65,20 @@ def good_word(word):
     return '-1' not in json['query']['pages']
 
 
-def random_word(done):
+def random_word(dictionary):
     with open(LONGWORDS, 'r') as longwords:
         words = longwords.read().split()
-    while True:
-        word = choice(words)
-        if word not in done and good_word(word):
+
+    # remove the ones we've seen.
+    words = [word for word in words if word not in dictionary]
+    shuffle(words)
+
+    # make sure it has a definition.
+    for word in words:
+        if good_word(word):
             return word
+
+    return None
 
 
 def sum_sxor(a_string, b_string):
@@ -133,14 +139,22 @@ def remove(fivegram, fourgrams):
 # I think its kind of funnier if these are intelligible.
 IGNORE_THEM = {'present', 'past', 'future', 'participal', 'plural', 'singular'}
 
-def mangle(word, transforms):
+def mangle(word, transforms, dictionary):
+    # Little words are too little
     if len(word) < 5 or word.lower() in IGNORE_THEM:
         return word
+
+    # This is the learning bit
+    if word in dictionary:
+        return dictionary[word]
+
+    # This is the mangling bit
     i = 0
     while i < len(word) - 5:
         fiver = word[i:i + 5]
         word = word.replace(fiver, choice(transforms)(fiver), 1)
         i += choice([1, 2])
+
     return word
 
 
@@ -179,10 +193,10 @@ if __name__ == '__main__':
 
     if oldme(ME):
         with open(ME, 'rb') as oldme:
-            fourgrams, fivegrams, sixgrams, done = pickle.load(oldme)
+            fourgrams, fivegrams, sixgrams, dictionary = pickle.load(oldme)
     else:
         fourgrams, fivegrams, sixgrams = init()
-        done = []
+        dictionary = {w: w for w in IGNORE_THEM}
 
     # *********************************************************************** #
     # Manglers...
@@ -196,14 +210,19 @@ if __name__ == '__main__':
     # *********************************************************************** #
     # Mangle...
 
-    word = random_word(done)
-    pos, definition = define(word)
-    mangled = mangle(word, transforms)
-    mangled_def = ' '.join(mangle(part, transforms) for part in definition.split())
-
-    # Nice
-    tweet = mangled + ': ' + pos + '. ' + mangled_def
-    sys.stdout.write(word + ' ' + tweet + '\n')
+    word = random_word(dictionary)
+    if word is None:
+        tweet = 'Entresh is done.'
+    else:
+        pos, definition = define(word)
+        mangled = mangle(word, transforms, dictionary)
+        tweet = mangled + ': ' + pos + '. '
+        # we got 280 lol
+        for part in definition.split():
+            tweet += mangle(part, transforms, dictionary)
+            if len(tweet) >= 279:
+                break
+            tweet += ' '
 
     # *********************************************************************** #
     # Auth...
@@ -212,13 +231,26 @@ if __name__ == '__main__':
     auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
     api = tweepy.API(auth)
 
-    stat = api.update_status(tweet)
+    try:
+        stat = api.update_status(tweet)
+    except TweepError as e:
+        sys.stdout.write('Tweet failed.', e)
+        raise
+
+    # *********************************************************************** #
+    # We learned a new word...
+
+    dictionary[word] = mangled
 
     # *********************************************************************** #
     # Sleep...
 
+    sys.stdout.write(tweet + '\n')
+
     with open(ME, 'wb') as newme:
-            pickle.dump((fourgrams, fivegrams, sixgrams, done + [word]), newme)
+            pickle.dump(
+                (fourgrams, fivegrams, sixgrams, dictionary),
+                newme)
 
     # bye!
     
